@@ -9,11 +9,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -31,29 +28,9 @@ import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.AudioClip;
 import logbook.Messages;
-import logbook.bean.AppBouyomiConfig;
-import logbook.bean.AppCondition;
-import logbook.bean.AppConfig;
-import logbook.bean.AppExpRecords;
-import logbook.bean.AppQuest;
-import logbook.bean.AppQuestCollection;
-import logbook.bean.Basic;
-import logbook.bean.DeckPort;
-import logbook.bean.DeckPortCollection;
-import logbook.bean.Mission;
-import logbook.bean.MissionCollection;
-import logbook.bean.Ndock;
-import logbook.bean.NdockCollection;
-import logbook.bean.Ship;
-import logbook.bean.ShipCollection;
-import logbook.bean.ShipMst;
-import logbook.bean.SlotItemCollection;
-import logbook.internal.Audios;
-import logbook.internal.BouyomiChanUtils;
+import logbook.bean.*;
+import logbook.internal.*;
 import logbook.internal.BouyomiChanUtils.Type;
-import logbook.internal.LoggerHolder;
-import logbook.internal.Ships;
-import logbook.internal.Tuple;
 import logbook.internal.proxy.ProxyHolder;
 import logbook.plugin.PluginServices;
 import logbook.plugin.lifecycle.StartUp;
@@ -253,9 +230,19 @@ public class MainController extends WindowController {
      */
     private void button() {
         // 装備
-        Integer slotitem = SlotItemCollection.get()
+
+        // 除外する装備IDを取得
+        List<Integer> exclusionItemNo = SlotitemMstCollection.get().
+                getSlotitemMap().values().stream()
+                .filter(slotitemMst -> !slotitemMst.asSlotItemType().isCount())
+                .map(SlotitemMst::getId).collect(Collectors.toList());
+
+        Integer slotitem = (int) SlotItemCollection.get()
                 .getSlotitemMap()
-                .size();
+                .entrySet()
+                .stream()
+                .filter(es -> !exclusionItemNo.contains(es.getValue().getSlotitemId()))
+                .count();
         Integer maxSlotitem = Basic.get()
                 .getMaxSlotitem();
         this.item.setText(MessageFormat.format(this.itemFormat, slotitem, maxSlotitem));
